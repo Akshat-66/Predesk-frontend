@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, User } from 'lucide-react';
+import axios from 'axios';
 
-export default function Edit() {
+export default function CreateProfile() {
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -11,9 +12,38 @@ export default function Edit() {
     work: [{ title: '', description: '' }],
     links: { github: '', linkedin: '', portfolio: '' }
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+  // Check if user is authenticated on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login first');
+      window.location.href = '/auth';
+      return;
+    }
+
+    // Optionally, pre-fill email from stored user data
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user.email) {
+          setProfile(prev => ({ ...prev, email: user.email }));
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
 
   const updateField = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const updateArrayField = (field, index, key, value) => {
@@ -21,6 +51,7 @@ export default function Edit() {
     if (key) newArray[index] = { ...newArray[index], [key]: value };
     else newArray[index] = value;
     setProfile(prev => ({ ...prev, [field]: newArray }));
+    if (error) setError('');
   };
 
   const addArrayItem = (field, defaultItem) => {
@@ -33,17 +64,118 @@ export default function Edit() {
     }
   };
 
-  const handleSubmit = () => {
+  const validateProfile = () => {
     if (!profile.name || !profile.email || !profile.education) {
-      alert('Please fill required fields');
+      setError('Please fill all required fields (Name, Email, Education)');
+      return false;
+    }
+
+    // Validate that at least one skill is provided
+    const validSkills = profile.skills.filter(skill => skill.trim());
+    if (validSkills.length === 0) {
+      setError('Please add at least one skill');
+      return false;
+    }
+
+    // Validate that at least one project is provided with title and description
+    const validProjects = profile.projects.filter(project => 
+      project.title.trim() && project.description.trim()
+    );
+    if (validProjects.length === 0) {
+      setError('Please add at least one project with title and description');
+      return false;
+    }
+
+    // Validate that at least one work experience is provided with title and description
+    const validWork = profile.work.filter(work => 
+      work.title.trim() && work.description.trim()
+    );
+    if (validWork.length === 0) {
+      setError('Please add at least one work experience with title and description');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateProfile()) {
       return;
     }
-    const filteredProfile = {
-      ...profile,
-      skills: profile.skills.filter(skill => skill.trim())
-    };
-    console.log('Profile:', JSON.stringify(filteredProfile, null, 2));
-    alert('Profile created successfully!');
+
+    setIsLoading(true);
+    setError('');
+
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication required. Please login again.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Filter out empty skills and prepare the data
+      const profileData = {
+        ...profile,
+        skills: profile.skills.filter(skill => skill.trim()),
+        projects: profile.projects.filter(project => 
+          project.title.trim() || project.description.trim()
+        ),
+        work: profile.work.filter(work => 
+          work.title.trim() || work.description.trim()
+        )
+      };
+
+      // Make API call with Bearer token
+      const response = await axios.post(
+        `${apiUrl}/profiles/`, 
+        profileData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('Profile created:', response.data);
+      alert('Profile created successfully!');
+      
+      // Redirect to dashboard or profile view
+      window.location.href = '/dashboard';
+
+    } catch (error) {
+      console.error('Profile creation error:', error);
+      
+      // Handle different types of errors
+      if (error.response) {
+        if (error.response.status === 401) {
+          setError('Session expired. Please login again.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 2000);
+        } else if (error.response.status === 400) {
+          const errorMessage = error.response.data?.message || 
+                             error.response.data?.error || 
+                             'Invalid data provided';
+          setError(errorMessage);
+        } else {
+          const errorMessage = error.response.data?.message || 
+                             error.response.data?.error || 
+                             `Server error: ${error.response.status}`;
+          setError(errorMessage);
+        }
+      } else if (error.request) {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -51,8 +183,15 @@ export default function Edit() {
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-2 mb-6">
           <User className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-bold">Edit Profile</h1>
+          <h1 className="text-2xl font-bold">Create Profile</h1>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
 
         <div className="space-y-6">
           {/* Basic Info */}
@@ -65,6 +204,7 @@ export default function Edit() {
                 onChange={(e) => updateField('name', e.target.value)}
                 className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Full name"
+                required
               />
             </div>
             <div>
@@ -75,6 +215,7 @@ export default function Edit() {
                 onChange={(e) => updateField('email', e.target.value)}
                 className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Email address"
+                required
               />
             </div>
           </div>
@@ -88,6 +229,7 @@ export default function Edit() {
               onChange={(e) => updateField('education', e.target.value)}
               className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="B.Tech CSE - IIIT Kottayam"
+              required
             />
           </div>
 
@@ -253,9 +395,10 @@ export default function Edit() {
           <div className="flex justify-center pt-4">
             <button
               onClick={handleSubmit}
-              className="px-8 py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className="px-8 py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
             >
-              Create Profile
+              {isLoading ? 'Creating Profile...' : 'Create Profile'}
             </button>
           </div>
         </div>

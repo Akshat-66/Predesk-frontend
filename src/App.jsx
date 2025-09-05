@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Auth from './pages/Auth';
-import Dashboard from './pages/Dashboard';
-import CreateProfile from './pages/CreateProfile';
-import Edit from './pages/Edit';
+import Auth from './components/Auth';
+import Dashboard from './components/Dashboard';
+import CreateProfile from './components/CreateProfile';
+import Edit from './components/Edit';
 
 
 function App() {
