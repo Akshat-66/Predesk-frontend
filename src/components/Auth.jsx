@@ -3,7 +3,7 @@ import { Eye, EyeOff, User, AlertCircle, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 
 // Get API base URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = 'https://predesk-backend.onrender.com';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
