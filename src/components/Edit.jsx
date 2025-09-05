@@ -19,7 +19,7 @@ export default function Edit() {
   const [success, setSuccess] = useState('');
   const [userEmail, setUserEmail] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  const apiUrl = 'https://predesk-backend.onrender.com/api';
 
   // Get email from URL query params
   const getEmailFromQuery = () => {

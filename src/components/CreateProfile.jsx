@@ -15,7 +15,7 @@ export default function CreateProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const apiUrl = 'https://predesk-backend.onrender.com/api';
 
   // Check if user is authenticated on component mount
   useEffect(() => {

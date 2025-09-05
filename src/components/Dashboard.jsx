@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  const apiUrl = 'https://predesk-backend.onrender.com/api';
 
   // Function to get user email from URL params or localStorage
   const getUserEmail = () => {
