@@ -102,7 +102,7 @@ export default function Auth() {
         if (isLogin) {
           // Add email as query parameter for login redirect
           const email = encodeURIComponent(formData.email);
-          window.location.href = `/dashboard?email=${email}`;
+          window.location.href = `/dashboard`;
         } else {
           window.location.href = '/create';
         }
